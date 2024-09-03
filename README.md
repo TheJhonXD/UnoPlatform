@@ -370,3 +370,131 @@ namespace MyApp
 }
 
 ```
+
+## Traer una lista de productos
+``` c#
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+
+namespace MyApp.Services
+{
+    public class ApiService
+    {
+        private readonly HttpClient _httpClient;
+
+        public ApiService()
+        {
+            _httpClient = new HttpClient();
+        }
+
+        public async Task<List<Product>> GetProductsAsync()
+        {
+            var response = await _httpClient.GetStringAsync("https://api.ejemplo.com/productos");
+            var products = JsonConvert.DeserializeObject<List<Product>>(response);
+            return products;
+        }
+
+        public async Task<List<string>> GetCategoriesAsync()
+        {
+            var response = await _httpClient.GetStringAsync("https://api.ejemplo.com/categorias");
+            var categories = JsonConvert.DeserializeObject<List<string>>(response);
+            return categories;
+        }
+
+        public async Task<List<string>> GetSuppliersAsync()
+        {
+            var response = await _httpClient.GetStringAsync("https://api.ejemplo.com/proveedores");
+            var suppliers = JsonConvert.DeserializeObject<List<string>>(response);
+            return suppliers;
+        }
+
+        public async Task<bool> AddProductAsync(Product product)
+        {
+            var json = JsonConvert.SerializeObject(product);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync("https://api.ejemplo.com/productos", content);
+
+            return response.IsSuccessStatusCode;
+        }
+    }
+
+    public class Product
+    {
+        public string Name { get; set; }
+        public double Price { get; set; }
+        public string Category { get; set; }
+        public string Supplier { get; set; }
+        public string Url { get; set; }
+        public string Description { get; set; }
+    }
+}
+
+```
+
+``` xaml
+<Page
+    x:Class="MyApp.ProductListPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MyApp">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel>
+            <TextBlock Text="Lista de Productos" FontSize="24" Margin="20,0,0,20" HorizontalAlignment="Center"/>
+
+            <!-- ListView para mostrar la lista de productos -->
+            <ListView x:Name="ProductsListView">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="local:Product">
+                        <StackPanel Orientation="Vertical" Padding="10">
+                            <TextBlock Text="{x:Bind Name}" FontSize="18"/>
+                            <TextBlock Text="{x:Bind Category}" FontSize="14" Foreground="Gray"/>
+                            <TextBlock Text="{x:Bind Price, StringFormat='{}{0:C}'}" FontSize="16"/>
+                            <TextBlock Text="{x:Bind Supplier}" FontSize="14"/>
+                            <TextBlock Text="{x:Bind Url}" FontSize="14" Foreground="Blue"/>
+                            <TextBlock Text="{x:Bind Description}" FontSize="14" TextWrapping="WrapWholeWords"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </StackPanel>
+    </Grid>
+</Page>
+
+```
+
+``` c#
+using MyApp.Services;
+using System.Collections.Generic;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
+
+namespace MyApp
+{
+    public sealed partial class ProductListPage : Page
+    {
+        private readonly ApiService _apiService;
+
+        public ProductListPage()
+        {
+            this.InitializeComponent();
+            _apiService = new ApiService();
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // Obtener la lista de productos desde la API
+            List<Product> products = await _apiService.GetProductsAsync();
+
+            // Asignar la lista de productos al ListView
+            ProductsListView.ItemsSource = products;
+        }
+    }
+}
+
+```
