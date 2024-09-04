@@ -498,3 +498,304 @@ namespace MyApp
 }
 
 ```
+## Datos de combobox desde API
+
+``` c#
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+
+namespace MyApp.Services
+{
+    public class ApiService
+    {
+        private readonly HttpClient _httpClient;
+
+        public ApiService()
+        {
+            _httpClient = new HttpClient();
+        }
+
+        public async Task<List<string>> GetCategoriesAsync()
+        {
+            var response = await _httpClient.GetStringAsync("https://api.ejemplo.com/categorias");
+            var categories = JsonConvert.DeserializeObject<List<string>>(response);
+            return categories;
+        }
+    }
+}
+
+```
+
+
+``` xaml
+<Page
+    x:Class="MyApp.AddProductPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MyApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <StackPanel>
+            <TextBlock Text="Seleccione una Categoría" FontSize="18" Margin="20"/>
+            
+            <!-- ComboBox para mostrar categorías -->
+            <ComboBox x:Name="CategoryComboBox" Header="Categoría" PlaceholderText="Seleccione una categoría"/>
+        </StackPanel>
+    </Grid>
+</Page>
+
+```
+
+### File.xaml.cs
+
+``` c#
+using MyApp.Services;
+using System.Collections.Generic;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
+
+namespace MyApp
+{
+    public sealed partial class AddProductPage : Page
+    {
+        private readonly ApiService _apiService;
+
+        public AddProductPage()
+        {
+            this.InitializeComponent();
+            _apiService = new ApiService();
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            // Obtener las categorías desde la API
+            List<string> categories = await _apiService.GetCategoriesAsync();
+
+            // Agregar cada categoría al ComboBox
+            foreach (var category in categories)
+            {
+                CategoryComboBox.Items.Add(new ComboBoxItem { Content = category });
+            }
+        }
+    }
+}
+
+```
+
+## Menu de navegacion
+
+``` xaml
+<Page
+    x:Class="MyApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MyApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <!-- Menú de navegación -->
+        <Grid HorizontalAlignment="Stretch" VerticalAlignment="Top" Background="LightGray" Height="60">
+            <!-- Definir las columnas para el layout -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/> <!-- Columna para el logo/nombre -->
+                <ColumnDefinition Width="*"/>    <!-- Columna para espaciar el contenido -->
+                <ColumnDefinition Width="Auto"/> <!-- Columna para las opciones de navegación -->
+            </Grid.ColumnDefinitions>
+
+            <!-- Logo o Nombre -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10">
+                <Image Source="ms-appx:///Assets/Logo.png" Height="40" Width="40" Margin="0,0,10,0"/>
+                <TextBlock Text="MyApp" FontSize="24" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Opciones de navegación alineadas a la derecha -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10">
+                <Button Content="Inicio" Style="{StaticResource NavigationButtonStyle}" Margin="10,0"/>
+                <Button Content="Administrar" Style="{StaticResource NavigationButtonStyle}" Margin="10,0"/>
+                <Button Content="Buscar" Style="{StaticResource NavigationButtonStyle}" Margin="10,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Contenido principal -->
+        <Grid>
+            <!-- Aquí irá el contenido de la página -->
+        </Grid>
+    </Grid>
+</Page>
+
+```
+
+
+``` xaml
+<Application.Resources>
+    <Style x:Key="NavigationButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="Black"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="FontSize" Value="16"/>
+        <Setter Property="Padding" Value="10,5"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</Application.Resources>
+
+```
+
+## NavigationView
+
+``` xaml
+<Page
+    x:Class="MyApp.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:MyApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <!-- NavigationView para el menú de navegación -->
+        <NavigationView
+            x:Name="NavView"
+            PaneDisplayMode="Top"
+            IsBackButtonVisible="Collapsed">
+
+            <!-- Cabecera: Logo y Nombre de la aplicación -->
+            <NavigationView.Header>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Image Source="ms-appx:///Assets/Logo.png" Height="40" Width="40" Margin="0,0,10,0"/>
+                    <TextBlock Text="MyApp" FontSize="24" VerticalAlignment="Center"/>
+                </StackPanel>
+            </NavigationView.Header>
+
+            <!-- Opciones de navegación -->
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Inicio" Icon="Home" Tag="HomePage"/>
+                <NavigationViewItem Content="Administrar" Icon="Manage" Tag="AdminPage"/>
+                <NavigationViewItem Content="Buscar" Icon="Find" Tag="SearchPage"/>
+            </NavigationView.MenuItems>
+
+            <!-- Contenido principal -->
+            <Frame x:Name="ContentFrame"/>
+        </NavigationView>
+    </Grid>
+</Page>
+
+```
+
+``` c#
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
+
+namespace MyApp
+{
+    public sealed partial class MainPage : Page
+    {
+        public MainPage()
+        {
+            this.InitializeComponent();
+
+            // Manejar la navegación cuando se selecciona un elemento
+            NavView.SelectionChanged += NavView_SelectionChanged;
+
+            // Opcional: Navegar a la página de inicio al cargar la aplicación
+            ContentFrame.Navigate(typeof(HomePage));
+        }
+
+        private void NavView_SelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+        {
+            if (args.IsSettingsSelected)
+            {
+                // Navegar a la página de configuración si es necesario
+                ContentFrame.Navigate(typeof(SettingsPage));
+            }
+            else
+            {
+                var selectedItem = args.SelectedItem as NavigationViewItem;
+                if (selectedItem != null)
+                {
+                    var selectedPageTag = selectedItem.Tag.ToString();
+
+                    // Navegar a la página correspondiente
+                    switch (selectedPageTag)
+                    {
+                        case "HomePage":
+                            ContentFrame.Navigate(typeof(HomePage));
+                            break;
+                        case "AdminPage":
+                            ContentFrame.Navigate(typeof(AdminPage));
+                            break;
+                        case "SearchPage":
+                            ContentFrame.Navigate(typeof(SearchPage));
+                            break;
+                    }
+                }
+            }
+        }
+    }
+}
+## Definir datos en formulario
+
+``` c#
+using MyApp.Services;
+using System;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Navigation;
+
+namespace MyApp
+{
+    public sealed partial class EditProductPage : Page
+    {
+        private readonly ApiService _apiService;
+
+        public EditProductPage()
+        {
+            this.InitializeComponent();
+            _apiService = new ApiService();
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            if (e.Parameter is int productId)
+            {
+                // Obtener los datos del producto desde la API
+                Product product = await _apiService.GetProductByIdAsync(productId);
+
+                // Setear los datos en los campos del formulario
+                NameTextBox.Text = product.Name;
+                PriceTextBox.Text = product.Price.ToString();
+                CategoryComboBox.SelectedItem = product.Category;
+                SupplierComboBox.SelectedItem = product.Supplier;
+                UrlTextBox.Text = product.Url;
+                DescriptionTextBox.Text = product.Description;
+            }
+        }
+
+        private void OnSaveButtonClick(object sender, Windows.UI.Xaml.RoutedEventArgs e)
+        {
+            // Lógica para guardar los cambios, si es necesario
+        }
+    }
+}
+
+```
+```
